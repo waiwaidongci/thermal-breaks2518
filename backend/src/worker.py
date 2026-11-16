@@ -5,6 +5,7 @@ from src.config.database import SessionLocal
 from src.config.settings import REDIS_URL,ARTIFACT_DIR
 from src.models import SegmentationRun,Segment
 from src.services.analysis import analyze
+from src.services.monotone_dp import MonotoneSolveTimeout
 from src.services.batches import batch_data
 from src.services.audit import record
 app=Celery('thermal_breaks',broker=REDIS_URL,backend=REDIS_URL)
@@ -19,6 +20,8 @@ def analyze_run(id):
    batch,points=batch_data(db,run.batch_id);result=analyze(batch,points,run.config)
    Path(ARTIFACT_DIR).mkdir(parents=True,exist_ok=True);Path(ARTIFACT_DIR,f'thermal-{id}.json').write_text(json.dumps(result,ensure_ascii=False,allow_nan=False))
    for segment in result['segments']:db.add(Segment(run_id=id,**{k:segment[k] for k in ('position','start','end','mean','rss')}))
-   run.result=result;run.status='succeeded';run.error=None;db.commit();record(db,'worker','run.succeeded',{'run_id':id,'segments_count':result['segments_count']})
+   run.result=result;run.status='succeeded';run.error=None;db.commit();record(db,'worker','run.succeeded',{'run_id':id,'segments_count':result['segments_count'],'mode':result.get('mode','free')})
+  except MonotoneSolveTimeout as e:
+   db.rollback();run=db.get(SegmentationRun,id);run.status='failed';run.error=str(e);db.commit();record(db,'worker','run.failed',{'run_id':id,'error':run.error,'mode':run.config.get('mode','free')})
   except Exception as e:
-   db.rollback();run=db.get(SegmentationRun,id);run.status='failed';run.error=str(e)[:1000];db.commit();record(db,'worker','run.failed',{'run_id':id,'error':run.error})
+   db.rollback();run=db.get(SegmentationRun,id);run.status='failed';run.error=str(e)[:1000];db.commit();record(db,'worker','run.failed',{'run_id':id,'error':run.error,'mode':run.config.get('mode','free')})

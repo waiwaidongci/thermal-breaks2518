@@ -1,8 +1,8 @@
 import numpy as np
 class StableCosts:
  def __init__(self,values):
-  self.y=np.asarray(values,dtype=np.longdouble)
-  if self.y.ndim!=1 or not 1<=len(self.y)<=600 or not np.isfinite(self.y).all() or (np.abs(self.y)>1e12).any():raise ValueError('序列须有限，一维，1..600点，温度绝对值≤1e12')
+  self.y=np.asarray(values,dtype=np.longdouble);self.n=len(self.y)
+  if self.y.ndim!=1 or not 1<=self.n<=600 or not np.isfinite(self.y).all() or (np.abs(self.y)>1e12).any():raise ValueError('序列须有限，一维，1..600点，温度绝对值≤1e12')
   self.origin=self.y[0];spread=np.max(np.abs(self.y-self.origin));self.scale=spread if spread else np.longdouble(1)
   z=(self.y-self.origin)/self.scale
   self.s=np.r_[np.longdouble(0),np.cumsum(z,dtype=np.longdouble)]

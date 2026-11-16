@@ -31,5 +31,11 @@ def seed():
    db.commit()
   if not db.scalar(select(InspectionNote).where(InspectionNote.name=='A批巡查假设初稿')):
    segments=list(db.scalars(select(Segment).where(Segment.run_id==run.id).order_by(Segment.position)));db.add(InspectionNote(run_id=run.id,name='A批巡查假设初稿',segment_ids=[s.id for s in segments],segment_snapshot=[row(s) for s in segments],interpretation='分段均值变化提供离线巡查线索，不能据此认定工艺切换原因。',next_step='回查时间对应的炉温记录及校准记录，核对平滑变化或测量偏差。',created_by='analyst@yangu.demo'));db.commit()
+  mono=db.scalar(select(SegmentationRun).where(SegmentationRun.name=='A批均温单调不降研究'))
+  if not mono:
+   batch=db.scalar(select(ThermalBatch).where(ThermalBatch.name==names[0]));points=[row(x) for x in db.scalars(select(TemperaturePoint).where(TemperaturePoint.batch_id==batch.id).order_by(TemperaturePoint.sequence))];config={'min_size':12,'max_segments':8,'penalty':80.,'penalties':[0.,20.,80.,320.,1280.],'mode':'monotone_mean'};result=analyze(row(batch),points,config)
+   mono=SegmentationRun(batch_id=batch.id,name='A批均温单调不降研究',config=config,created_by='analyst@yangu.demo',status='succeeded',result=result);db.add(mono);db.flush()
+   for s in result['segments']:db.add(Segment(run_id=mono.id,**{k:s[k] for k in ('position','start','end','mean','rss')}))
+   db.commit()
   counts={m.__tablename__:db.scalar(select(func.count()).select_from(m)) for m in [User,ThermalBatch,TemperaturePoint,SegmentationRun,Segment,InspectionNote]};print(json.dumps(counts));return counts
 if __name__=='__main__':seed()

@@ -8,6 +8,9 @@ class RunStatus(StrEnum):
  RUNNING='running'
  SUCCEEDED='succeeded'
  FAILED='failed'
+class SegmentMode(StrEnum):
+ FREE='free'
+ MONOTONE_MEAN='monotone_mean'
 class NoteStatus(StrEnum):
  DRAFT='draft'
  APPROVED='approved'

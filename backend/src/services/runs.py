@@ -17,4 +17,4 @@ def create_run(db,data,actor):
   analyze_run.delay(run.id)
  except Exception:
   run.status='failed';run.error='队列不可用，请稍后重试';db.commit();raise HTTPException(503,run.error)
- record(db,actor,'run.queued',{'run_id':run.id});return row(run)
+ record(db,actor,'run.queued',{'run_id':run.id,'mode':config.get('mode','free')});return row(run)

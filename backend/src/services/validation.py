@@ -15,7 +15,8 @@ def validate_points(points):
  return ordered
 
 def validate_config(config,n):
- m=config['min_size'];k=config['max_segments'];b=config['penalty'];path=config['penalties']
+ m=config['min_size'];k=config['max_segments'];b=config['penalty'];path=config['penalties'];mode=config.get('mode','free')
+ if mode not in ('free','monotone_mean'):raise ValueError('分段方式必须是 free 或 monotone_mean')
  if not isinstance(m,int) or isinstance(m,bool) or not 1<=m<=600 or m>n:raise ValueError('min_size超出样本数或合法范围')
  if not isinstance(k,int) or isinstance(k,bool) or not 1<=k<=12:raise ValueError('max_segments必须1..12')
  if not math.isfinite(b) or not 0<=b<=1e12 or not 2<=len(path)<=12 or any(not math.isfinite(x) or not 0<=x<=1e12 for x in path):raise ValueError('罚项需有限非负且路径2..12项')
